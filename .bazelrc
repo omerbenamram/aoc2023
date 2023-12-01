@@ -1,0 +1,27 @@
+# Build options for all configurations
+build --cxxopt='-std=c++17' # Use C++17 standard
+build --host_cxxopt='-std=c++17'
+common --enable_bzlmod
+
+# Enable optimizations for release builds
+build:release --compilation_mode=opt
+build:release --copt=-O2
+build:release --copt=-DNDEBUG
+
+# Debug build settings
+build:debug --compilation_mode=dbg
+build:debug --copt=-O0
+build:debug --copt=-g
+
+# Cache settings
+# Adjust these paths according to your project's setup
+build --disk_cache=~/.bazel_disk_cache
+build --repository_cache=~/.bazel_repository_cache
+
+# Test settings
+test --test_output=errors  # Show only errors in test output
+
+# Set the default build and test configuration to 'release'
+# Remove or comment these lines if you want the default to be 'dbg'
+build --config=release
+test --config=release
