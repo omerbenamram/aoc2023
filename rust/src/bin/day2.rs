@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use itertools::Itertools;
 
-use anyhow::{bail, Error, Result};
+use anyhow::{Error, Result};
 use aoc2023::regex;
 
 #[derive(Debug)]
