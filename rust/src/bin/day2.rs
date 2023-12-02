@@ -52,9 +52,8 @@ impl FromStr for Game {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
         let re = regex!(r"Game (?P<id>\d+): (?P<showings>.+)");
-        let re_showing = regex!(r"(?P<count>\d+) (?P<color>red|green|blue)");
+        let re_showing = regex!(r"(?P<count>\d+) (?P<color>\w+)");
 
         let caps = re
             .captures(s)
@@ -64,21 +63,25 @@ impl FromStr for Game {
 
         let showings = caps["showings"]
             .split(';')
-            .filter_map(|showing| {
+            .map(|showing| {
                 let mut showings = vec![];
                 for cap in re_showing.captures_iter(showing) {
-                    let count = cap["count"].parse().ok()?;
+                    let count = cap["count"]
+                        .parse()
+                        .ok()
+                        .expect("this always matches a number");
+
                     let color = match &cap["color"] {
                         "red" => Color::Red,
                         "green" => Color::Green,
                         "blue" => Color::Blue,
-                        _ => return None,
+                        _ => return Err(Error::msg(format!("Invalid color `{}`", &cap["color"]))),
                     };
                     showings.push((count, color));
                 }
-                Some(showings)
+                Ok(showings)
             })
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(Game { id, showings })
     }
