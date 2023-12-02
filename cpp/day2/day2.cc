@@ -10,7 +10,7 @@ int main()
     std::string line;
     while (std::getline(std::cin, line))
     {
-        Game game = from_string(line);
+        Game game(line);
         input.push_back(game);
     }
     std::cout << "Part1: " << part1(input) << std::endl;

@@ -2,75 +2,9 @@
 #include <string>
 #include <regex>
 #include <iostream>
+#include "libday2.h"
 
-enum class Color
-{
-    Red,
-    Green,
-    Blue,
-};
-
-struct Game
-{
-    int id;
-    std::vector<std::vector<std::pair<int, Color>>> showings;
-
-    bool is_possible() const
-    {
-        for (const auto &showing : showings)
-        {
-            for (const auto &pair : showing)
-            {
-                switch (pair.second)
-                {
-                case Color::Red:
-                    if (pair.first > 12)
-                        return false;
-                    break;
-                case Color::Green:
-                    if (pair.first > 13)
-                        return false;
-                    break;
-                case Color::Blue:
-                    if (pair.first > 14)
-                        return false;
-                    break;
-                }
-            }
-        }
-        return true;
-    }
-
-    int power() const
-    {
-        int max_red = 0;
-        int max_green = 0;
-        int max_blue = 0;
-
-        for (const auto &showing : showings)
-        {
-            for (const auto &pair : showing)
-            {
-                switch (pair.second)
-                {
-                case Color::Red:
-                    max_red = std::max(max_red, pair.first);
-                    break;
-                case Color::Green:
-                    max_green = std::max(max_green, pair.first);
-                    break;
-                case Color::Blue:
-                    max_blue = std::max(max_blue, pair.first);
-                    break;
-                }
-            }
-        }
-
-        return max_red * max_green * max_blue;
-    }
-};
-
-Game from_string(const std::string &s)
+Game::Game(const std::string &s)
 {
     std::regex re("Game (\\d+): (.+)");
     std::smatch match;
@@ -79,8 +13,7 @@ Game from_string(const std::string &s)
         throw std::runtime_error("Invalid game string");
     }
 
-    Game game;
-    game.id = std::stoi(match[1]);
+    id = std::stoi(match[1]);
 
     std::regex re_showing("(\\d+) (\\w+)");
     std::string showings_str = match[2];
@@ -107,11 +40,63 @@ Game from_string(const std::string &s)
         {
             throw std::runtime_error("Invalid color " + color_str);
         }
-        game.showings.push_back({{count, color}});
+        showings.push_back({{count, color}});
         ++it;
     }
+}
 
-    return game;
+bool Game::is_possible() const
+{
+    for (const auto &showing : showings)
+    {
+        for (const auto &pair : showing)
+        {
+            switch (pair.second)
+            {
+            case Color::Red:
+                if (pair.first > 12)
+                    return false;
+                break;
+            case Color::Green:
+                if (pair.first > 13)
+                    return false;
+                break;
+            case Color::Blue:
+                if (pair.first > 14)
+                    return false;
+                break;
+            }
+        }
+    }
+    return true;
+}
+
+int Game::power() const
+{
+    int max_red = 0;
+    int max_green = 0;
+    int max_blue = 0;
+
+    for (const auto &showing : showings)
+    {
+        for (const auto &pair : showing)
+        {
+            switch (pair.second)
+            {
+            case Color::Red:
+                max_red = std::max(max_red, pair.first);
+                break;
+            case Color::Green:
+                max_green = std::max(max_green, pair.first);
+                break;
+            case Color::Blue:
+                max_blue = std::max(max_blue, pair.first);
+                break;
+            }
+        }
+    }
+
+    return max_red * max_green * max_blue;
 }
 
 int part1(const std::vector<Game> &games)

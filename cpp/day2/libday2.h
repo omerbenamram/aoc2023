@@ -17,11 +17,10 @@ struct Game
     int id;
     std::vector<std::vector<std::pair<int, Color>>> showings;
 
+    Game(const std::string &s);
     bool is_possible() const;
     int power() const;
 };
-
-Game from_string(const std::string &s);
 
 int part1(const std::vector<Game> &games);
 int part2(const std::vector<Game> &games);
