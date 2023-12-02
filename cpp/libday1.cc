@@ -81,8 +81,8 @@ int part2(std::vector<std::string> calibration_values)
         {
             throw std::invalid_argument("No match found in line: " + line);
         }
-        std::string code1 = matches.front();
-        std::string code2 = matches.back();
+        auto code1 = matches.front();
+        auto code2 = matches.back();
         sum += std::stoi(std::to_string(to_digit(code1)) + std::to_string(to_digit(code2)));
     }
     return sum;
