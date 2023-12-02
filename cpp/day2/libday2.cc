@@ -6,7 +6,7 @@
 
 Game::Game(const std::string &s)
 {
-    std::regex re("Game (\\d+): (.+)");
+    static std::regex re("Game (\\d+): (.+)");
     std::smatch match;
     if (!std::regex_search(s, match, re))
     {
@@ -15,7 +15,7 @@ Game::Game(const std::string &s)
 
     id = std::stoi(match[1]);
 
-    std::regex re_showing("(\\d+) (\\w+)");
+    static std::regex re_showing("(\\d+) (\\w+)");
     std::string showings_str = match[2];
     std::sregex_iterator it(showings_str.begin(), showings_str.end(), re_showing);
     std::sregex_iterator end;
