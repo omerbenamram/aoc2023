@@ -12,7 +12,6 @@ enum Color {
     Blue,
 }
 
-// Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
 #[derive(Debug)]
 struct Game {
     id: i32,
@@ -53,7 +52,10 @@ impl FromStr for Game {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
         let re = regex!(r"Game (?P<id>\d+): (?P<showings>.+)");
+        let re_showing = regex!(r"(?P<count>\d+) (?P<color>red|green|blue)");
+
         let caps = re
             .captures(s)
             .ok_or_else(|| Error::msg("Invalid game string"))?;
@@ -62,29 +64,21 @@ impl FromStr for Game {
 
         let showings = caps["showings"]
             .split(';')
-            .filter(|showing| !showing.is_empty())
-            .map(|showing| {
+            .filter_map(|showing| {
                 let mut showings = vec![];
-
-                for count_and_color in showing.split(",") {
-                    if count_and_color.is_empty() {
-                        continue;
-                    }
-
-                    let (count, color) = count_and_color.trim().split(" ").collect_tuple().unwrap();
-
-                    let count = count.trim().parse()?;
-                    let color = match color {
+                for cap in re_showing.captures_iter(showing) {
+                    let count = cap["count"].parse().ok()?;
+                    let color = match &cap["color"] {
                         "red" => Color::Red,
                         "green" => Color::Green,
                         "blue" => Color::Blue,
-                        _ => bail!("Invalid color"),
+                        _ => return None,
                     };
-                    showings.push((count, color))
+                    showings.push((count, color));
                 }
-                Ok(showings)
+                Some(showings)
             })
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Vec<_>>();
 
         Ok(Game { id, showings })
     }
