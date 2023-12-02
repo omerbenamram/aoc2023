@@ -1,15 +1,13 @@
 # Build options for all configurations
 build --cxxopt='-std=c++17' # Use C++17 standard
 build --host_cxxopt='-std=c++17'
-
-build --repo_env=CC=clang
-build --repo_env=CXX=clang++
+build --incompatible_enable_cc_toolchain_resolution
 
 common --enable_bzlmod
 
 # Enable optimizations for release builds
 build:release --compilation_mode=opt
-build:release --copt=-O2
+build:release --copt=-O3
 build:release --copt=-DNDEBUG
 
 # Debug build settings
@@ -28,4 +26,4 @@ test --test_output=errors  # Show only errors in test output
 # Set the default build and test configuration to 'release'
 # Remove or comment these lines if you want the default to be 'dbg'
 build --config=release
-test --config=release
+test --config=debug
