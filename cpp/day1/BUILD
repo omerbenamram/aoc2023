@@ -13,7 +13,7 @@ cc_binary(
 )
 
 cc_test(
-    name = "day1_test",
+    name = "test",
     srcs = ["day1_test.cc"],
     deps = [
         ":day1_lib",
