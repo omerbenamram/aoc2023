@@ -72,11 +72,11 @@ func (g *Game) power() int {
 	return maxRed * maxGreen * maxBlue
 }
 
-func parseGame(s string) (*Game, error) {
-	re := regexp.MustCompile(`Game (\d+): (.+)`)
-	reShowings := regexp.MustCompile(`(\d+) (\w+)`)
+var reGame = regexp.MustCompile(`Game (\d+): (.+)`)
+var reShowings = regexp.MustCompile(`(\d+) (\w+)`)
 
-	matches := re.FindStringSubmatch(s)
+func parseGame(s string) (*Game, error) {
+	matches := reGame.FindStringSubmatch(s)
 	if matches == nil {
 		return nil, fmt.Errorf("invalid game string")
 	}
