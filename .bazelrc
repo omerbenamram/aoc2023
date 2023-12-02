@@ -24,6 +24,8 @@ build --repository_cache=~/.bazel_repository_cache
 test --test_output=errors  # Show only errors in test output
 
 # Set the default build and test configuration to 'release'
-# Remove or comment these lines if you want the default to be 'dbg'
 build --config=release
 test --config=debug
+
+build:debug --copt=-fsanitize=address
+build:debug --linkopt=-fsanitize=address

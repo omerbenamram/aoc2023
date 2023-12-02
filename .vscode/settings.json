@@ -68,5 +68,7 @@
         "unordered_set": "cpp",
         "mutex": "cpp",
         "thread": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": false,
+    "editor.inlayHints.enabled": "offUnlessPressed"
 }
