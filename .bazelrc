@@ -1,6 +1,10 @@
 # Build options for all configurations
 build --cxxopt='-std=c++17' # Use C++17 standard
 build --host_cxxopt='-std=c++17'
+
+build --repo_env=CC=clang
+build --repo_env=CXX=clang++
+
 common --enable_bzlmod
 
 # Enable optimizations for release builds

@@ -8,16 +8,16 @@ cc_binary(
     name = "day2",
     srcs = ["day2.cc"],
     deps = [
-        ":day2_lib"
-    ]
+        ":day2_lib",
+    ],
 )
 
 cc_test(
     name = "test",
+    size = "small",
     srcs = ["day2_test.cc"],
     deps = [
         ":day2_lib",
         "@googletest//:gtest_main",
     ],
-    size="small"
 )
