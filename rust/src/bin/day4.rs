@@ -18,14 +18,10 @@ impl Card {
     }
 
     pub fn score(&self) -> i32 {
-        let n_winning_numbers = self.n_matching_numbers();
-
-        if n_winning_numbers == 0 {
-            0
-        } else if n_winning_numbers == 1 {
-            1
-        } else {
-            2i32.pow((n_winning_numbers - 1) as u32)
+        match self.n_matching_numbers() {
+            0 => 0,
+            1 => 1,
+            n => 2i32.pow((n - 1) as u32),
         }
     }
 }
