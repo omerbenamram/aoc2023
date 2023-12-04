@@ -1,8 +1,5 @@
-use std::{collections::HashSet, iter, str::FromStr};
-
-use anyhow::{anyhow, bail, Context, Result};
-use aoc2023::regex;
-use itertools::Itertools;
+use anyhow::{Context, Result};
+use std::{collections::HashSet, str::FromStr};
 
 #[derive(Debug)]
 struct Card {
