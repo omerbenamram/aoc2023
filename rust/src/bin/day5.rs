@@ -1,5 +1,7 @@
 use anyhow::{Context, Result};
 use itertools::Itertools;
+use log::debug;
+
 use std::{ops::Range, str::FromStr};
 
 #[derive(Clone, Debug)]
@@ -41,21 +43,29 @@ impl MaterialMapping {
     }
 
     pub fn map_range(&self, ns: Range<i64>) -> Vec<Range<i64>> {
+        // Ranges holds final mapped values.
         let mut ranges = Vec::new();
+
+        // Input holds values that we need to check against next rule.
         let mut input = vec![ns.clone()];
 
-        for mapping in &self.inner {
+        for (i, mapping) in self.inner.iter().enumerate() {
             let mut tmp = vec![];
-
             for other in &input {
                 let dst_end = mapping.source_range_start + mapping.range_len;
 
                 let range = mapping.source_range_start..dst_end;
-
+                debug!(
+                    "Comparing map ({:?} -> {:?}) to input {:?}",
+                    range,
+                    mapping.dest_range_start..mapping.dest_range_start + mapping.range_len,
+                    other
+                );
                 // first check if no overlap at all
                 if range.end < other.start || range.start > other.end {
                     // this just makes the input fall through to next mapping
                     tmp.push(other.clone());
+                    debug!("no overlap - fall through: {:?}", other);
                     continue;
                 }
 
@@ -75,9 +85,11 @@ impl MaterialMapping {
                         let mapped_end = mapping.map(range.end).expect("checked to be in range");
 
                         let mapped_range = mapped_start..mapped_end;
+                        debug!("mapping {:?} -> {:?}", other.start..range.end, mapped_range);
                         ranges.push(mapped_range);
 
                         let non_mapped = range.end..other.end;
+                        debug!("fall through: {:?}", non_mapped);
                         tmp.push(non_mapped);
                     }
                     (std::cmp::Ordering::Greater, std::cmp::Ordering::Greater)
@@ -94,9 +106,11 @@ impl MaterialMapping {
                         let mapped_end = mapping.map(other.end).expect("checked to be in range");
 
                         let mapped_range = mapped_start..mapped_end;
+                        debug!("mapping {:?} -> {:?}", range.start..other.end, mapped_range);
                         ranges.push(mapped_range);
 
                         let non_mapped = other.start..range.start;
+                        debug!("fall through: {:?}", non_mapped);
                         tmp.push(non_mapped);
                     }
                     (std::cmp::Ordering::Less, std::cmp::Ordering::Equal)
@@ -113,6 +127,7 @@ impl MaterialMapping {
                         let mapped_end = mapping.map(other.end).expect("checked to be in range");
 
                         let mapped_range = mapped_start..mapped_end;
+                        debug!("mapping {:?} -> {:?}", other.start..other.end, mapped_range);
                         ranges.push(mapped_range);
                     }
                     (std::cmp::Ordering::Greater, std::cmp::Ordering::Less) => {
@@ -124,47 +139,30 @@ impl MaterialMapping {
                         let mapped_end = mapping.map(range.end).expect("checked to be in range");
 
                         let mapped_range = mapped_start..mapped_end;
+                        debug!("mapping {:?} -> {:?}", range.start..range.end, mapped_range);
                         ranges.push(mapped_range);
 
                         // let rest fall through
                         let non_mapped = other.start..range.start;
+                        debug!("fall through: {:?}", non_mapped);
                         tmp.push(non_mapped);
 
                         let non_mapped = range.end..other.end;
+                        debug!("fall through: {:?}", non_mapped);
                         tmp.push(non_mapped);
                     }
                 }
             }
             let _ = std::mem::replace(&mut input, tmp);
+
+            // if input fell all the way through return it.
+            if i == self.inner.len() - 1 {
+                ranges.extend(input.clone())
+            }
         }
 
-        // if first input fell all the way through return it.
-        if ranges.is_empty() {
-            vec![ns]
-        } else {
-            ranges
-        }
+        ranges
     }
-}
-
-#[test]
-fn test_map_ranges() {
-    // 77..100 -> 45..63
-    // 45..64 -> 81..100
-    // 64..77 -> 68..81
-    let mapping = textwrap::dedent(
-        "light-to-temperature map:
-    45 77 23
-    81 45 19
-    68 64 13",
-    );
-
-    let mapping = MaterialMapping::from_str(&mapping).unwrap();
-    assert_eq!(mapping.map(77), 45);
-    assert_eq!(mapping.map(88), 56);
-    // first 77..88 is mapped to 45..56
-    // then 74..77 should be mapped to 78..81
-    assert_eq!(mapping.map_range(74..88), vec![78..81, 45..56]);
 }
 
 #[derive(Clone, Debug)]
@@ -270,8 +268,8 @@ impl Alamnac {
             let mut results = vec![pair.0..pair.0 + pair.1];
 
             for mapping in &self.mappings {
-                // println!("{}", mapping.name);
-                // println!("Current: {:#?}", results);
+                debug!("{}", mapping.name);
+                debug!("Current: {:#?}", results);
                 let mut tmp = vec![];
 
                 for range in results.iter() {
@@ -314,52 +312,97 @@ fn input(input: &str) -> Result<Alamnac> {
     Alamnac::from_str(input)
 }
 
-#[test]
-fn test() {
-    let test_input = textwrap::dedent(
-        "seeds: 79 14 55 13
-        seed-to-soil map:
-        50 98 2
-        52 50 48
-
-        soil-to-fertilizer map:
-        0 15 37
-        37 52 2
-        39 0 15
-
-        fertilizer-to-water map:
-        49 53 8
-        0 11 42
-        42 0 7
-        57 7 4
-
-        water-to-light map:
-        88 18 7
-        18 25 70
-
-        light-to-temperature map:
-        45 77 23
-        81 45 19
-        68 64 13
-
-        temperature-to-humidity map:
-        0 69 1
-        1 0 69
-
-        humidity-to-location map:
-        60 56 37
-        56 93 4
-        ",
-    );
-
-    let input = input(&test_input).unwrap();
-    // assert_eq!(part1(&input).unwrap(), 35);
-    assert_eq!(part2(&input).unwrap(), 46);
-}
-
 fn main() {
     let stdin_input = std::io::read_to_string(std::io::stdin()).unwrap();
     let input = input(&stdin_input).unwrap();
     println!("Part1: {}", part1(&input).unwrap());
     println!("Part2: {}", part2(&input).unwrap());
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    use log::LevelFilter;
+    use maplit::hashset;
+
+    use super::*;
+
+    #[test]
+    fn test_alamnac() {
+        use env_logger::Builder;
+        use std::io::Write;
+
+        Builder::new()
+            .format(|buf, record| writeln!(buf, "[{}] - {}", record.level(), record.args()))
+            .filter(None, LevelFilter::Debug)
+            .init();
+
+        let test_input = textwrap::dedent(
+            "seeds: 79 14 55 13
+
+            seed-to-soil map:
+            50 98 2
+            52 50 48
+
+            soil-to-fertilizer map:
+            0 15 37
+            37 52 2
+            39 0 15
+
+            fertilizer-to-water map:
+            49 53 8
+            0 11 42
+            42 0 7
+            57 7 4
+
+            water-to-light map:
+            88 18 7
+            18 25 70
+
+            light-to-temperature map:
+            45 77 23
+            81 45 19
+            68 64 13
+
+            temperature-to-humidity map:
+            0 69 1
+            1 0 69
+
+            humidity-to-location map:
+            60 56 37
+            56 93 4
+            ",
+        );
+
+        let input = input(&test_input).unwrap();
+        assert_eq!(part1(&input).unwrap(), 35);
+        assert_eq!(part2(&input).unwrap(), 46);
+    }
+
+    #[test]
+    fn test_map_ranges() {
+        // 77..100 -> 45..63
+        // 45..64 -> 81..100
+        // 64..77 -> 68..81
+        let mapping = textwrap::dedent(
+            "light-to-temperature map:
+        45 77 23
+        81 45 19
+        68 64 13",
+        );
+
+        let mapping = MaterialMapping::from_str(&mapping).unwrap();
+        assert_eq!(mapping.map(77), 45);
+        assert_eq!(mapping.map(88), 56);
+        // first 77..88 is mapped to 45..56
+        // then 74..77 should be mapped to 78..81
+        assert_eq!(
+            mapping
+                .map_range(74..88)
+                .into_iter()
+                .collect::<HashSet<_>>(),
+            hashset![78..81, 45..56]
+        );
+    }
 }
