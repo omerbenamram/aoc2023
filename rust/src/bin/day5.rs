@@ -260,6 +260,7 @@ impl Alamnac {
 
         while i <= self.seeds.len() - 2 {
             let pair = (self.seeds[i], self.seeds[i + 1]);
+            debug!("=========({:?})==========", pair.0..pair.0 + pair.1);
 
             #[allow(clippy::single_range_in_vec_init)]
             let mut results = vec![pair.0..pair.0 + pair.1];
@@ -331,6 +332,7 @@ mod tests {
         use std::io::Write;
 
         Builder::new()
+            .is_test(true)
             .format(|buf, record| writeln!(buf, "[{}] - {}", record.level(), record.args()))
             .filter(None, LevelFilter::Debug)
             .init();
