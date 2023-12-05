@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use itertools::Itertools;
 use log::debug;
 
-use std::{ops::Range, str::FromStr};
+use std::{cmp, ops::Range, str::FromStr};
 
 #[derive(Clone, Debug)]
 struct RangeMap {
@@ -32,6 +32,37 @@ struct MaterialMapping {
     inner: Vec<RangeMap>,
 }
 
+// A ∩ B
+fn intersect_ranges(a: Range<i64>, b: Range<i64>) -> Option<Range<i64>> {
+    let start = cmp::max(a.start, b.start);
+    let end = cmp::min(a.end, b.end);
+    if start < end {
+        Some(start..end)
+    } else {
+        None
+    }
+}
+
+/// A - B
+/// Given A, B -> will return sections present in A but not in B
+/// A  |>----<|------|>-------<|
+/// B          ------
+///
+///
+/// A  |>-----------------<|----
+/// B                       ------
+///            C
+fn subtract_ranges(a: Range<i64>, b: Range<i64>) -> Vec<Range<i64>> {
+    let mut difference = Vec::new();
+    if a.start < b.start {
+        difference.push(a.start..b.start);
+    }
+    if a.end > b.end {
+        difference.push(b.end..a.end);
+    }
+    difference
+}
+
 impl MaterialMapping {
     pub fn map(&self, n: i64) -> i64 {
         for mapping in &self.inner {
@@ -43,121 +74,35 @@ impl MaterialMapping {
     }
 
     pub fn map_range(&self, ns: Range<i64>) -> Vec<Range<i64>> {
-        // Ranges holds final mapped values.
         let mut ranges = Vec::new();
-
-        // Input holds values that we need to check against next rule.
-        let mut input = vec![ns.clone()];
+        let mut input = vec![ns];
 
         for mapping in &self.inner {
-            let mut tmp = vec![];
+            let mut tmp = Vec::new();
+            let dst_end = mapping.source_range_start + mapping.range_len;
+            let range = mapping.source_range_start..dst_end;
+
             for other in &input {
-                let dst_end = mapping.source_range_start + mapping.range_len;
+                // If no intersection simply fall through
+                if let Some(intersection) = intersect_ranges(other.clone(), range.clone()) {
+                    let mapped_start = mapping
+                        .map(intersection.start)
+                        .expect("checked intersection");
 
-                let range = mapping.source_range_start..dst_end;
-                debug!(
-                    "Comparing map ({:?} -> {:?}) to input {:?}",
-                    range,
-                    mapping.dest_range_start..mapping.dest_range_start + mapping.range_len,
-                    other
-                );
-                // first check if no overlap at all
-                if range.end < other.start || range.start > other.end {
-                    // this just makes the input fall through to next mapping
+                    // Intersecting range is mapped.
+                    let mapped_end = mapping.map(intersection.end).expect("checked intersection");
+                    ranges.push(mapped_start..mapped_end);
+
+                    // We check the rest of the mappings not covered by intersection against other maps.
+                    tmp.extend(subtract_ranges(other.clone(), range.clone()));
+                } else {
                     tmp.push(other.clone());
-                    debug!("no overlap - fall through: {:?}", other);
-                    continue;
-                }
-
-                let start_cmp = range.start.cmp(&other.start);
-                let end_cmp = range.end.cmp(&other.end);
-                match (start_cmp, end_cmp) {
-                    // 1   3             10       15
-                    // ------------------         range
-                    //     |-------------|--------|  ns
-                    (std::cmp::Ordering::Less, std::cmp::Ordering::Less)
-                    | (std::cmp::Ordering::Equal, std::cmp::Ordering::Less) => {
-                        debug_assert!(range.end > other.start);
-                        // we have part that will be mapped, and part that will not be mapped.
-                        let mapped_start =
-                            mapping.map(other.start).expect("checked to be in range");
-
-                        let mapped_end = mapping.map(range.end).expect("checked to be in range");
-
-                        let mapped_range = mapped_start..mapped_end;
-                        debug!("mapping {:?} -> {:?}", other.start..range.end, mapped_range);
-                        ranges.push(mapped_range);
-
-                        let non_mapped = range.end..other.end;
-                        debug!("fall through: {:?}", non_mapped);
-                        tmp.push(non_mapped);
-                    }
-                    (std::cmp::Ordering::Greater, std::cmp::Ordering::Greater)
-                    | (std::cmp::Ordering::Greater, std::cmp::Ordering::Equal) => {
-                        debug_assert!(range.start <= other.end);
-
-                        //      -----------------
-                        // |----|------------|
-                        // we have part that will be mapped, and part that will not be mapped.
-                        // let range_to_map = range.start..other.end;
-
-                        let mapped_start =
-                            mapping.map(range.start).expect("checked to be in range");
-                        let mapped_end = mapping.map(other.end).expect("checked to be in range");
-
-                        let mapped_range = mapped_start..mapped_end;
-                        debug!("mapping {:?} -> {:?}", range.start..other.end, mapped_range);
-                        ranges.push(mapped_range);
-
-                        let non_mapped = other.start..range.start;
-                        debug!("fall through: {:?}", non_mapped);
-                        tmp.push(non_mapped);
-                    }
-                    (std::cmp::Ordering::Less, std::cmp::Ordering::Equal)
-                    | (std::cmp::Ordering::Equal, std::cmp::Ordering::Greater)
-                    | (std::cmp::Ordering::Less, std::cmp::Ordering::Greater)
-                    | (std::cmp::Ordering::Equal, std::cmp::Ordering::Equal) => {
-                        // entierty of ns covered and needs to be mapped
-                        // need to find index and map
-                        // --------------------------
-                        //      ---------------------
-                        let mapped_start =
-                            mapping.map(other.start).expect("checked to be in range");
-
-                        let mapped_end = mapping.map(other.end).expect("checked to be in range");
-
-                        let mapped_range = mapped_start..mapped_end;
-                        debug!("mapping {:?} -> {:?}", other.start..other.end, mapped_range);
-                        ranges.push(mapped_range);
-                    }
-                    (std::cmp::Ordering::Greater, std::cmp::Ordering::Less) => {
-                        // we now have three ranges!
-                        //    --------------------- range
-                        // ----------------------------- ns
-                        let mapped_start =
-                            mapping.map(range.start).expect("checked to be in range");
-                        let mapped_end = mapping.map(range.end).expect("checked to be in range");
-
-                        let mapped_range = mapped_start..mapped_end;
-                        debug!("mapping {:?} -> {:?}", range.start..range.end, mapped_range);
-                        ranges.push(mapped_range);
-
-                        // let rest fall through
-                        let non_mapped = other.start..range.start;
-                        debug!("fall through: {:?}", non_mapped);
-                        tmp.push(non_mapped);
-
-                        let non_mapped = range.end..other.end;
-                        debug!("fall through: {:?}", non_mapped);
-                        tmp.push(non_mapped);
-                    }
                 }
             }
-            let _ = std::mem::replace(&mut input, tmp);
+            input = tmp;
         }
 
-        // if input fell all the way through return it.
-        ranges.extend(input.clone());
+        ranges.extend(input);
         ranges
     }
 }
@@ -285,7 +230,7 @@ impl Alamnac {
             if minimum < 0 {
                 minimum = results.iter().map(|r| r.start).min().unwrap()
             } else {
-                minimum = std::cmp::min(minimum, results.iter().map(|r| r.start).min().unwrap())
+                minimum = cmp::min(minimum, results.iter().map(|r| r.start).min().unwrap())
             }
         }
 
