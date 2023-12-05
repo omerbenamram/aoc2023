@@ -3,7 +3,7 @@ use itertools::Itertools;
 use std::{
     cmp::Ordering,
     collections::{HashMap, HashSet},
-    ops::RangeInclusive,
+    ops::Range,
     str::FromStr,
 };
 
@@ -49,114 +49,103 @@ impl MaterialMapping {
         n
     }
 
-    pub fn map_range(&self, ns: RangeInclusive<i64>) -> Vec<RangeInclusive<i64>> {
+    pub fn map_range(&self, ns: Range<i64>) -> Vec<Range<i64>> {
         let mut ranges = Vec::new();
-        let other = ns.clone();
+        let mut input = vec![ns.clone()];
 
         for mapping in &self.inner {
-            let dst_end = mapping.source_range_start + mapping.range_len;
+            let mut tmp = vec![];
 
-            let range = mapping.source_range_start..=dst_end;
+            for other in &input {
+                let dst_end = mapping.source_range_start + mapping.range_len;
 
-            println!("checking map {:?}, against input {:?}", range, other);
-            // first check if no overlap at all
-            if range.end() < other.start() {
-                // ranges.insert(other.clone());
-                println!("no overlap");
-                continue;
-            }
+                let range = mapping.source_range_start..dst_end;
 
-            if range.start() > other.end() {
-                // ranges.insert(other.clone());
-                println!("no overlap");
-                continue;
-            }
-
-            match (
-                range.start().cmp(other.start()),
-                range.end().cmp(other.end()),
-            ) {
-                // 1   3             10       15
-                // ------------------         range
-                //     |-------------|--------|  ns
-                cmp @ (c1 @ std::cmp::Ordering::Less, std::cmp::Ordering::Less)
-                | cmp @ (c1 @ std::cmp::Ordering::Equal, std::cmp::Ordering::Less) => {
-                    debug_assert!(range.end() > other.start());
-                    println!("{:?}", cmp);
-                    // we have part that will be mapped, and part that will not be mapped.
-                    let range_to_map = *other.start()..=*range.end();
-                    let mapped_start = mapping.map(*other.start()).expect("checked to be in range");
-
-                    let mapped_end = mapping.map(*range.end()).expect("checked to be in range");
-
-                    let mapped_range = mapped_start..=mapped_end;
-                    println!("mapping {:?} -> {:?}", range_to_map, mapped_range);
-                    ranges.push(mapped_range);
-
-                    let non_mapped = (*range.end() + 1)..=*other.end();
-                    println!("adding {:?}", non_mapped);
-                    ranges.push(non_mapped);
+                // println!("checking map {:?}, against input {:?}", range, other);
+                // first check if no overlap at all
+                if range.end < other.start || range.start > other.end {
+                    tmp.push(other.clone());
+                    continue;
                 }
-                cmp @ (std::cmp::Ordering::Greater, std::cmp::Ordering::Greater)
-                | cmp @ (std::cmp::Ordering::Greater, std::cmp::Ordering::Equal) => {
-                    debug_assert!(range.start() <= other.end());
-                    println!("{:?}", cmp);
 
-                    //      -----------------
-                    // |----|------------|
-                    // we have part that will be mapped, and part that will not be mapped.
-                    let range_to_map = *range.start()..=*other.end();
+                let start_cmp = range.start.cmp(&other.start);
+                let end_cmp = range.end.cmp(&other.end);
+                match (start_cmp, end_cmp) {
+                    // 1   3             10       15
+                    // ------------------         range
+                    //     |-------------|--------|  ns
+                    (std::cmp::Ordering::Less, std::cmp::Ordering::Less)
+                    | (std::cmp::Ordering::Equal, std::cmp::Ordering::Less) => {
+                        debug_assert!(range.end > other.start);
+                        // we have part that will be mapped, and part that will not be mapped.
+                        let range_to_map = other.start..range.end;
+                        let mapped_start =
+                            mapping.map(other.start).expect("checked to be in range");
 
-                    let mapped_start = mapping.map(*range.start()).expect("checked to be in range");
-                    let mapped_end = mapping.map(*other.end()).expect("checked to be in range");
+                        let mapped_end = mapping.map(range.end).expect("checked to be in range");
 
-                    let mapped_range = mapped_start..=mapped_end;
-                    println!("mapping {:?} -> {:?}", range_to_map, mapped_range);
-                    ranges.push(mapped_range);
+                        let mapped_range = mapped_start..mapped_end;
+                        ranges.push(mapped_range);
 
-                    let non_mapped = *other.start()..=(*range.start() - 1);
-                    println!("adding {:?}", non_mapped);
-                    ranges.push(non_mapped);
-                }
-                cmp @ (std::cmp::Ordering::Less, std::cmp::Ordering::Equal)
-                | cmp @ (std::cmp::Ordering::Equal, std::cmp::Ordering::Greater)
-                | cmp @ (std::cmp::Ordering::Less, std::cmp::Ordering::Greater)
-                | cmp @ (std::cmp::Ordering::Equal, std::cmp::Ordering::Equal) => {
-                    println!("{:?}", cmp);
-                    // entierty of ns covered and needs to be mapped
-                    // need to find index and map
-                    // --------------------------
-                    //      ---------------------
-                    let mapped_start = mapping.map(*other.start()).expect("checked to be in range");
+                        let non_mapped = range.end..other.end;
+                        tmp.push(non_mapped);
+                    }
+                    (std::cmp::Ordering::Greater, std::cmp::Ordering::Greater)
+                    | (std::cmp::Ordering::Greater, std::cmp::Ordering::Equal) => {
+                        debug_assert!(range.start <= other.end);
 
-                    let mapped_end = mapping.map(*other.end()).expect("checked to be in range");
+                        //      -----------------
+                        // |----|------------|
+                        // we have part that will be mapped, and part that will not be mapped.
+                        // let range_to_map = range.start..other.end;
 
-                    let mapped_range = mapped_start..=mapped_end;
-                    println!("mapping {:?} -> {:?}", other, mapped_range);
-                    ranges.push(mapped_range);
-                }
-                cmp @ (std::cmp::Ordering::Greater, std::cmp::Ordering::Less) => {
-                    println!("{:?}", cmp);
-                    println!("range: {:?} other: {:?}", range, other);
-                    // we now have three ranges!
-                    //    --------------------- range
-                    // ----------------------------- ns
-                    let mapped_start = mapping.map(*range.start()).expect("checked to be in range");
-                    let mapped_end = mapping.map(*range.end()).expect("checked to be in range");
+                        let mapped_start =
+                            mapping.map(range.start).expect("checked to be in range");
+                        let mapped_end = mapping.map(other.end).expect("checked to be in range");
 
-                    let mapped_range = mapped_start..=mapped_end;
-                    println!("mapping {:?} -> {:?}", range, mapped_range);
-                    ranges.push(mapped_range);
+                        let mapped_range = mapped_start..mapped_end;
+                        ranges.push(mapped_range);
 
-                    let non_mapped = *other.start()..=(*range.start() - 1);
-                    println!("adding {:?}", non_mapped);
-                    ranges.push(non_mapped);
+                        let non_mapped = other.start..range.start;
+                        tmp.push(non_mapped);
+                    }
+                    (std::cmp::Ordering::Less, std::cmp::Ordering::Equal)
+                    | (std::cmp::Ordering::Equal, std::cmp::Ordering::Greater)
+                    | (std::cmp::Ordering::Less, std::cmp::Ordering::Greater)
+                    | (std::cmp::Ordering::Equal, std::cmp::Ordering::Equal) => {
+                        // entierty of ns covered and needs to be mapped
+                        // need to find index and map
+                        // --------------------------
+                        //      ---------------------
+                        let mapped_start =
+                            mapping.map(other.start).expect("checked to be in range");
 
-                    let non_mapped = (*range.end() + 1)..=*other.end();
-                    println!("adding {:?}", non_mapped);
-                    ranges.push(non_mapped);
+                        let mapped_end = mapping.map(other.end).expect("checked to be in range");
+
+                        let mapped_range = mapped_start..mapped_end;
+                        // println!("mapping {:?} -> {:?}", other, mapped_range);
+                        ranges.push(mapped_range);
+                    }
+                    (std::cmp::Ordering::Greater, std::cmp::Ordering::Less) => {
+                        // we now have three ranges!
+                        //    --------------------- range
+                        // ----------------------------- ns
+                        let mapped_start =
+                            mapping.map(range.start).expect("checked to be in range");
+                        let mapped_end = mapping.map(range.end).expect("checked to be in range");
+
+                        let mapped_range = mapped_start..mapped_end;
+                        ranges.push(mapped_range);
+
+                        let non_mapped = other.start..(range.start);
+                        tmp.push(non_mapped);
+
+                        let non_mapped = range.end..other.end;
+                        tmp.push(non_mapped);
+                    }
                 }
             }
+            let _ = std::mem::replace(&mut input, tmp);
         }
 
         if ranges.is_empty() {
@@ -169,6 +158,9 @@ impl MaterialMapping {
 
 #[test]
 fn test_map_ranges() {
+    // 77..100 -> 45..63
+    // 45..64 -> 81..100
+    // 64..77 -> 68..81
     let mapping = textwrap::dedent(
         "light-to-temperature map:
     45 77 23
@@ -177,7 +169,11 @@ fn test_map_ranges() {
     );
 
     let mapping = MaterialMapping::from_str(&mapping).unwrap();
-    assert_eq!(mapping.map_range(74..=88), vec![74..=77, 45..=56]);
+    assert_eq!(mapping.map(77), 45);
+    assert_eq!(mapping.map(88), 56);
+    // first 77..88 is mapped to 45..56
+    // then 74..77 should be mapped to 78..81
+    assert_eq!(mapping.map_range(74..88), vec![78..81, 45..56]);
 }
 
 #[derive(Clone, Debug)]
@@ -187,8 +183,7 @@ struct Alamnac {
 }
 
 fn delimited_numbers(s: &str) -> Result<Vec<i64>> {
-    s.trim()
-        .split_whitespace()
+    s.split_whitespace()
         .map(|n| n.trim().parse::<i64>().context("expected number"))
         .collect::<Result<_>>()
 }
@@ -204,7 +199,7 @@ impl FromStr for MaterialMapping {
 
         let (name, _) = lines
             .next()
-            .and_then(|l| l.trim().split_once(" "))
+            .and_then(|l| l.trim().split_once(' '))
             .context("expetec first line: seed-to-soil map:")?;
 
         let inner = lines
@@ -236,7 +231,7 @@ impl FromStr for Alamnac {
         let mut lines = s.lines();
         let (_, seeds) = lines
             .next()
-            .and_then(|l| l.split_once(":"))
+            .and_then(|l| l.split_once(':'))
             .context("expetec first line: seeds: ...")?;
 
         let seeds = delimited_numbers(seeds)?;
@@ -279,11 +274,13 @@ impl Alamnac {
 
         while i <= self.seeds.len() - 2 {
             let pair = (self.seeds[i], self.seeds[i + 1]);
-            let mut results = vec![pair.0..=pair.0 + pair.1];
+
+            #[allow(clippy::single_range_in_vec_init)]
+            let mut results = vec![pair.0..pair.0 + pair.1];
 
             for mapping in &self.mappings {
-                println!("{}", mapping.name);
-                println!("Current: {:#?}", results);
+                // println!("{}", mapping.name);
+                // println!("Current: {:#?}", results);
                 let mut tmp = vec![];
 
                 for range in results.iter() {
@@ -294,16 +291,15 @@ impl Alamnac {
                 let _ = std::mem::replace(&mut results, tmp);
             }
 
-            debug_assert!(results.len() >= 1);
+            debug_assert!(!results.is_empty());
 
             i += 2;
 
             if minimum < 0 {
-                minimum = results.iter().map(|r| *r.start()).min().unwrap()
+                minimum = results.iter().map(|r| r.start).min().unwrap()
             } else {
-                minimum = std::cmp::min(minimum, results.iter().map(|r| *r.start()).min().unwrap())
+                minimum = std::cmp::min(minimum, results.iter().map(|r| r.start).min().unwrap())
             }
-            println!("min: {}", minimum);
         }
 
         minimum
@@ -311,12 +307,12 @@ impl Alamnac {
 }
 
 fn part1(input: &Alamnac) -> Result<i64> {
-    Ok(input
+    input
         .lowest_seed_numbers()
         .iter()
         .cloned()
         .min()
-        .context("expected at least one seed")?)
+        .context("expected at least one seed")
 }
 
 fn part2(input: &Alamnac) -> Result<i64> {
@@ -334,34 +330,34 @@ fn test() {
         seed-to-soil map:
         50 98 2
         52 50 48
-        
+
         soil-to-fertilizer map:
         0 15 37
         37 52 2
         39 0 15
-        
+
         fertilizer-to-water map:
         49 53 8
         0 11 42
         42 0 7
         57 7 4
-        
+
         water-to-light map:
         88 18 7
         18 25 70
-        
+
         light-to-temperature map:
         45 77 23
         81 45 19
         68 64 13
-        
+
         temperature-to-humidity map:
         0 69 1
         1 0 69
-        
+
         humidity-to-location map:
         60 56 37
-        56 93 4    
+        56 93 4
         ",
     );
 
