@@ -12,19 +12,14 @@ struct RangeMap {
 impl RangeMap {
     pub fn map(&self, n: i64) -> Option<i64> {
         let dst_end = self.source_range_start + self.range_len;
-
         let range = self.source_range_start..=dst_end;
-        // number needs to be mapped
-        if range.contains(&n) {
-            // 52 -> 50 - if n is 54 then needs to be 52
-            if self.source_range_start > self.dest_range_start {
-                return Some(n - (self.source_range_start - self.dest_range_start));
-            } else {
-                return Some(n + (self.dest_range_start - self.source_range_start));
-            };
-        }
 
-        None
+        if range.contains(&n) {
+            let offset = self.dest_range_start - self.source_range_start;
+            Some(n + offset)
+        } else {
+            None
+        }
     }
 }
 
