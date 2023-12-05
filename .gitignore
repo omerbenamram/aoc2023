@@ -1,3 +1,4 @@
 target
 bazel-*
 debug
+log.txt

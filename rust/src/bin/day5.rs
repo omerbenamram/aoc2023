@@ -1,11 +1,6 @@
 use anyhow::{Context, Result};
 use itertools::Itertools;
-use std::{
-    cmp::Ordering,
-    collections::{HashMap, HashSet},
-    ops::Range,
-    str::FromStr,
-};
+use std::{ops::Range, str::FromStr};
 
 #[derive(Clone, Debug)]
 struct RangeMap {
@@ -35,6 +30,7 @@ impl RangeMap {
 
 #[derive(Clone, Debug)]
 struct MaterialMapping {
+    #[allow(unused)]
     name: String,
     inner: Vec<RangeMap>,
 }
@@ -61,9 +57,9 @@ impl MaterialMapping {
 
                 let range = mapping.source_range_start..dst_end;
 
-                // println!("checking map {:?}, against input {:?}", range, other);
                 // first check if no overlap at all
                 if range.end < other.start || range.start > other.end {
+                    // this just makes the input fall through to next mapping
                     tmp.push(other.clone());
                     continue;
                 }
@@ -78,7 +74,6 @@ impl MaterialMapping {
                     | (std::cmp::Ordering::Equal, std::cmp::Ordering::Less) => {
                         debug_assert!(range.end > other.start);
                         // we have part that will be mapped, and part that will not be mapped.
-                        let range_to_map = other.start..range.end;
                         let mapped_start =
                             mapping.map(other.start).expect("checked to be in range");
 
@@ -123,7 +118,6 @@ impl MaterialMapping {
                         let mapped_end = mapping.map(other.end).expect("checked to be in range");
 
                         let mapped_range = mapped_start..mapped_end;
-                        // println!("mapping {:?} -> {:?}", other, mapped_range);
                         ranges.push(mapped_range);
                     }
                     (std::cmp::Ordering::Greater, std::cmp::Ordering::Less) => {
@@ -137,7 +131,8 @@ impl MaterialMapping {
                         let mapped_range = mapped_start..mapped_end;
                         ranges.push(mapped_range);
 
-                        let non_mapped = other.start..(range.start);
+                        // let rest fall through
+                        let non_mapped = other.start..range.start;
                         tmp.push(non_mapped);
 
                         let non_mapped = range.end..other.end;
@@ -148,6 +143,7 @@ impl MaterialMapping {
             let _ = std::mem::replace(&mut input, tmp);
         }
 
+        // if first input fell all the way through return it.
         if ranges.is_empty() {
             vec![ns]
         } else {
