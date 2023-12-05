@@ -49,7 +49,7 @@ impl MaterialMapping {
         // Input holds values that we need to check against next rule.
         let mut input = vec![ns.clone()];
 
-        for (i, mapping) in self.inner.iter().enumerate() {
+        for mapping in &self.inner {
             let mut tmp = vec![];
             for other in &input {
                 let dst_end = mapping.source_range_start + mapping.range_len;
@@ -154,13 +154,10 @@ impl MaterialMapping {
                 }
             }
             let _ = std::mem::replace(&mut input, tmp);
-
-            // if input fell all the way through return it.
-            if i == self.inner.len() - 1 {
-                ranges.extend(input.clone())
-            }
         }
 
+        // if input fell all the way through return it.
+        ranges.extend(input.clone());
         ranges
     }
 }
