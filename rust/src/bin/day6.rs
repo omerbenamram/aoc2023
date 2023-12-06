@@ -10,17 +10,7 @@ type Input = Vec<(i64, i64)>;
 /// solve for x
 fn get_num_ways_to_win(time: i64, distance: i64) -> Option<i64> {
     if let Roots::Two([start, stop]) = find_roots_quadratic(1.0, -time as f64, distance as f64) {
-        let mut num_valid_numbers = (stop.floor() - start.ceil()) as i64 + 1;
-
-        // if we have perfect integer roots than we need to exclude them (since we need closest integer that is strictly less than the root)
-        if stop.fract() == 0.0 {
-            num_valid_numbers -= 1;
-        }
-
-        if start.fract() == 0.0 {
-            num_valid_numbers -= 1;
-        }
-        Some(num_valid_numbers)
+        Some((stop.ceil() - start.floor()) as i64 - 1)
     } else {
         None
     }
@@ -82,7 +72,7 @@ fn input(input: &str) -> Result<Input> {
 
     anyhow::ensure!(lines.next().is_none(), "Expected exactly 2 lines");
 
-    Ok(time.into_iter().zip(distance).into_iter().collect_vec())
+    Ok(time.into_iter().zip(distance).collect_vec())
 }
 
 fn main() {
