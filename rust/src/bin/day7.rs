@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, str::FromStr};
+use std::cmp::Ordering;
 
 use anyhow::Result;
 use aoc2023::regex;
@@ -177,11 +177,6 @@ fn tie_break(a: &[i32], b: &[i32]) -> Ordering {
 fn play(input: &Input) -> Result<i32> {
     let mut input = input.clone();
     input.sort_by(|hand_and_bid, other| hand_and_bid.0.camel_cmp(&other.0));
-
-    for i in &input {
-        print!("{}: {}  ", i.0, i.1);
-        println!("{:?}", i.0.strength());
-    }
 
     Ok(input
         .iter()
