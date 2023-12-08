@@ -58,7 +58,12 @@ fn path_len_from(graph: &Graph, instructions: &str, node: &str) -> Result<i64> {
 
 fn prime_factorization(i: i64) -> Vec<i64> {
     let mut factors = vec![];
-    for p in 2..i {
+
+    if (i == 2) || (i == 3) {
+        factors.push(i)
+    }
+
+    for p in (3..i).step_by(2) {
         if i % p == 0 {
             factors.push(p as i64)
         }
