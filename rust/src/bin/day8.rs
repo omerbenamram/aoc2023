@@ -56,26 +56,6 @@ fn path_len_from(graph: &Graph, instructions: &str, node: &str) -> Result<i64> {
     Ok(steps)
 }
 
-// Finds path len to a node terminating at "Z", starting from some node.
-fn cycle_len(graph: &Graph, instructions: &str, node: &str) -> Result<i64> {
-    let mut steps = 0;
-    let mut at = node;
-
-    for inst in instructions.chars().cycle() {
-        match inst {
-            'L' => at = &graph[at][0],
-            'R' => at = &graph[at][1],
-            _ => bail!("Unexpected instruction"),
-        }
-        steps += 1;
-        if at == node {
-            break;
-        }
-    }
-
-    Ok(steps)
-}
-
 fn prime_factorization(i: i64) -> Vec<i64> {
     let mut factors = vec![];
     for p in 2..i {
