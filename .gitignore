@@ -2,3 +2,5 @@ target
 bazel-*
 debug
 log.txt
+perf*
+flamegraph*
