@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use itertools::Itertools;
 
 type Input = Vec<Vec<i64>>;
 
@@ -44,20 +43,17 @@ fn part1(input: &Input) -> Result<i64> {
 }
 
 fn part2(input: &Input) -> Result<i64> {
-    let mut numbers: Vec<i64> = vec![];
-
-    for sequence in input {
-        let deltas = calc_deltas_recursive(sequence);
-        let mut acc = 0;
-
-        let mut idx = deltas.len() - 1;
-        while idx >= 1 {
-            let i1 = deltas[idx - 1].first().unwrap();
-            acc = i1 - acc;
-            idx -= 1;
-        }
-        numbers.push(acc);
-    }
+    let numbers: Vec<i64> = input
+        .iter()
+        .map(|sequence| {
+            let deltas = calc_deltas_recursive(sequence);
+            deltas
+                .iter()
+                .rev()
+                .skip(1)
+                .fold(0, |acc, row| row.first().expect("rows are not empty") - acc)
+        })
+        .collect();
 
     Ok(numbers.into_iter().sum())
 }
