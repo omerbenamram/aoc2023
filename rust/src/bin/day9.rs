@@ -9,8 +9,9 @@ fn calc_deltas_recursive(sequence: &[i64]) -> Vec<Vec<i64>> {
 
     while {
         let delta: Vec<i64> = current.windows(2).map(|w| w[1] - w[0]).collect();
-        deltas.push(delta.clone());
-        !delta.iter().all(|&d| d == 0) // stop when all delta is zeros.
+        let stop = delta.iter().all(|&d| d == 0); // stop when all delta is zeros.
+        deltas.push(delta); // calculate stop first to avoid clone :)
+        !stop
     } {
         current = deltas.last().unwrap();
     }
