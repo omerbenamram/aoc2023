@@ -7,19 +7,12 @@ fn calc_deltas_recursive(sequence: &[i64]) -> Vec<Vec<i64>> {
 
     let mut current = sequence;
 
-    loop {
-        let mut delta = vec![];
-        for w in current.windows(2) {
-            delta.push(w[1] - w[0]);
-        }
-
-        deltas.push(delta.to_vec());
-
-        if delta.iter().all(|&d| d == 0) {
-            break;
-        }
-
-        current = &deltas.last().expect("inserted at least one sequence");
+    while {
+        let delta: Vec<i64> = current.windows(2).map(|w| w[1] - w[0]).collect();
+        deltas.push(delta.clone());
+        !delta.iter().all(|&d| d == 0)
+    } {
+        current = deltas.last().unwrap();
     }
 
     deltas
