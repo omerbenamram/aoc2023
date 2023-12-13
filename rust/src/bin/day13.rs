@@ -1,7 +1,5 @@
-use std::borrow::BorrowMut;
-
-use anyhow::{Context, Result};
-use ndarray::{arr2, s, Array2, ArrayView2, Axis, Slice};
+use anyhow::Result;
+use ndarray::{Array2, ArrayView2};
 
 type Input = Vec<Array2<char>>;
 
