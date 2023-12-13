@@ -23,6 +23,7 @@ fn parse_input(input: &str) -> Result<Input> {
         grid.push(line.chars().collect());
     }
 
+    // last has no space after
     let shape = (grid.len(), grid[0].len());
     let chars = grid.clone().into_iter().flatten().collect::<Vec<_>>();
     let grid_arr = Array2::from_shape_vec(shape, chars).unwrap();
