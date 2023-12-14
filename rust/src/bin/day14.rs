@@ -1,16 +1,11 @@
-use std::{
-    collections::{HashMap, HashSet},
-    str::FromStr,
-};
-
 use anyhow::{anyhow, Result};
-use ndarray::{Array2, ArrayView2};
+use std::{collections::HashMap, str::FromStr};
 
 type Input = Grid;
 
 #[derive(Clone)]
 struct Grid {
-    pub inner: Array2<char>,
+    pub inner: grid::Grid<char>,
 }
 
 impl FromStr for Grid {
@@ -26,7 +21,7 @@ impl FromStr for Grid {
 
         let shape = (grid.len(), grid[0].len());
         let chars = grid.clone().into_iter().flatten().collect::<Vec<_>>();
-        let grid_arr = Array2::from_shape_vec(shape, chars).unwrap();
+        let grid_arr = grid::Grid::from_vec(chars, shape.1);
 
         Ok(Grid { inner: grid_arr })
     }
@@ -37,8 +32,8 @@ impl Grid {
         // skip first row
         loop {
             let mut rocks_moved = 0;
-            for i in 1..self.inner.nrows() {
-                for j in 0..self.inner.ncols() {
+            for i in 1..self.inner.rows() {
+                for j in 0..self.inner.cols() {
                     let tile = self.inner[(i, j)];
 
                     if tile == 'O' {
@@ -59,80 +54,21 @@ impl Grid {
     }
 
     pub fn tilt_west(&mut self) {
-        // skip first row
-
-        loop {
-            let mut rocks_moved = 0;
-            for c in 1..self.inner.ncols() {
-                for r in 0..self.inner.nrows() {
-                    let tile = self.inner[(r, c)];
-
-                    if tile == 'O' {
-                        let west_tile = self.inner[(r, c - 1)];
-
-                        if west_tile == '.' {
-                            self.inner[(r, c)] = '.';
-                            self.inner[(r, c - 1)] = 'O';
-                            rocks_moved += 1;
-                        }
-                    }
-                }
-            }
-            if rocks_moved == 0 {
-                break;
-            }
-        }
+        self.inner.rotate_right();
+        self.tilt_north();
+        self.inner.rotate_left();
     }
 
     pub fn tilt_east(&mut self) {
-        // skip first row
-
-        loop {
-            let mut rocks_moved = 0;
-            for c in (0..self.inner.ncols() - 1).rev() {
-                for r in 0..self.inner.nrows() {
-                    let tile = self.inner[(r, c)];
-
-                    if tile == 'O' {
-                        let east_tile = self.inner[(r, c + 1)];
-
-                        if east_tile == '.' {
-                            self.inner[(r, c)] = '.';
-                            self.inner[(r, c + 1)] = 'O';
-                            rocks_moved += 1;
-                        }
-                    }
-                }
-            }
-            if rocks_moved == 0 {
-                break;
-            }
-        }
+        self.inner.rotate_left();
+        self.tilt_north();
+        self.inner.rotate_right();
     }
 
     pub fn tilt_south(&mut self) {
-        // skip first row
-        loop {
-            let mut rocks_moved = 0;
-            for i in (0..self.inner.nrows() - 1).rev() {
-                for j in 0..self.inner.ncols() {
-                    let tile = self.inner[(i, j)];
-
-                    if tile == 'O' {
-                        let south_tile = self.inner[(i + 1, j)];
-
-                        if south_tile == '.' {
-                            self.inner[(i, j)] = '.';
-                            self.inner[(i + 1, j)] = 'O';
-                            rocks_moved += 1;
-                        }
-                    }
-                }
-            }
-            if rocks_moved == 0 {
-                break;
-            }
-        }
+        self.inner.rotate_half();
+        self.tilt_north();
+        self.inner.rotate_half();
     }
 
     pub fn cycle(&mut self) {
@@ -144,10 +80,10 @@ impl Grid {
 
     pub fn load(&self) -> i64 {
         let mut load = 0;
-        for i in 0..self.inner.nrows() {
-            for j in 0..self.inner.ncols() {
+        for i in 0..self.inner.rows() {
+            for j in 0..self.inner.cols() {
                 if self.inner[(i, j)] == 'O' {
-                    load += self.inner.nrows() - i
+                    load += self.inner.rows() - i
                 }
             }
         }
