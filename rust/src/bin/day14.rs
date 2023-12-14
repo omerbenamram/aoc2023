@@ -3,7 +3,7 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use ndarray::{Array2, ArrayView2};
 
 type Input = Grid;
@@ -168,7 +168,30 @@ fn part1(input: &Input) -> Result<i64> {
 }
 
 fn part2(input: &Input) -> Result<i64> {
-    todo!("find the cycles automatically");
+    let mut seen = HashMap::new();
+    let mut scores = HashMap::new();
+    let maxval = 1_000_000_000;
+
+    let mut array = input.clone();
+    let mut i = 0;
+
+    while i < maxval {
+        // hash array state, ugly, but works.
+        let h = array.inner.iter().collect::<String>();
+
+        if seen.contains_key(&h) {
+            let cycle_length = i - seen[&h];
+            let index = seen[&h] + (maxval - seen[&h]) % cycle_length;
+            return Ok(*scores.get(&index).unwrap());
+        }
+
+        seen.insert(h, i);
+        scores.insert(i, array.load());
+        array.cycle();
+        i += 1;
+    }
+
+    Err(anyhow!("solution not found"))
 }
 
 fn main() {
