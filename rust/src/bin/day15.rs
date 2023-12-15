@@ -31,8 +31,8 @@ fn part1(input: &Input) -> Result<i64> {
     Ok(input.into_iter().map(|s| hash(s) as i64).sum())
 }
 
-type Label = String;
-type Lens = (Label, i64);
+type Label<'a> = &'a str;
+type Lens<'a> = (Label<'a>, i64);
 
 fn part2(input: &Input) -> Result<i64> {
     let mut hash_table = vec![Vec::<Lens>::new(); 256];
@@ -40,19 +40,19 @@ fn part2(input: &Input) -> Result<i64> {
     for instruction in input {
         if instruction.contains('=') {
             let (label, value) = instruction.split_once('=').expect("checked contains");
-            let value = value.parse().context("expected <label>=<number>")?;
-            let values = &mut hash_table[hash(label)];
+            let lens_power = value.parse().context("expected <label>=<number>")?;
+            let slots = &mut hash_table[hash(label)];
 
-            match values.iter_mut().find(|lens| lens.0 == label) {
-                Some(lens) => lens.1 = value,
-                None => values.push((label.to_string(), value)),
+            match slots.iter_mut().find(|lens| lens.0 == label) {
+                Some(lens) => lens.1 = lens_power,
+                None => slots.push((label, lens_power)),
             }
         } else {
             let label = instruction.trim_end_matches('-');
-            let values = &mut hash_table[hash(label)];
+            let slots = &mut hash_table[hash(label)];
 
             // Remove
-            values.retain(|lens| lens.0 != label);
+            slots.retain(|lens| lens.0 != label);
         }
     }
 
