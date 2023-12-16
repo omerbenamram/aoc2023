@@ -59,7 +59,7 @@ impl FromStr for MirrorMaze {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Direction {
     Left,
     Right,
@@ -79,22 +79,26 @@ fn go(coordinate: (i64, i64), direction: Direction) -> (i64, i64) {
 impl MirrorMaze {
     pub fn num_energized_tiles(&self, start_at: (i64, i64), going: Direction) -> usize {
         let mut energized_tiles = HashSet::new();
+        let mut visited_tiles = HashMap::new();
 
         let grid = &self.0;
         let mut beam_heads = VecDeque::new();
 
         beam_heads.push_back((start_at, going));
         energized_tiles.insert(start_at);
-        let mut iterations = 0;
 
         while let Some((beam, direction)) = beam_heads.pop_front() {
-            if iterations > 5_000_000 {
-                break;
-            }
-
             // if we didn't fall off map
             if let Some(tile) = grid.get_coordinate(beam) {
                 energized_tiles.insert(beam);
+
+                // Check if we've visited this tile in this direction before
+                if visited_tiles.get(&(beam, direction)).is_some() {
+                    // We've visited this tile in this direction before, so we're in a loop
+                    continue;
+                }
+                // Mark this tile as visited in this direction
+                visited_tiles.insert((beam, direction), true);
 
                 match tile {
                     // '/'
@@ -144,7 +148,6 @@ impl MirrorMaze {
                     },
                 };
             }
-            iterations += 1;
         }
 
         energized_tiles.len()
