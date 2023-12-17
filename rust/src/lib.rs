@@ -9,6 +9,26 @@ macro_rules! regex {
     }};
 }
 
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum Direction {
+    Left,
+    Right,
+    Up,
+    Down,
+}
+
+impl Direction {
+    pub fn opposite(&self) -> Direction {
+        match self {
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
+            Direction::Up => Direction::Down,
+            Direction::Down => Direction::Up,
+        }
+    }
+}
+
+
 pub trait CoordExt {
     fn left(&self) -> (i64, i64);
     fn right(&self) -> (i64, i64);
