@@ -138,24 +138,23 @@ impl HeatLossMaze {
                             continue;
                         }
 
-                        if *dc > 3 && *dc <= 9 {
+                        let next = if *dc > 3 && *dc <= 9 {
                             if direction == d {
-                                let next = (next_coord, *direction, *dc + 1);
-                                if let Some(weight) = self.0.get_coordinate(next_coord) {
-                                    possible.push((next, *weight));
-                                }
+                                Some((next_coord, *direction, *dc + 1))
                             } else {
-                                let next = (next_coord, *direction, 1);
-                                if let Some(weight) = self.0.get_coordinate(next_coord) {
-                                    possible.push((next, *weight));
-                                }
+                                Some((next_coord, *direction, 1))
                             }
                         } else {
                             if direction != d {
-                                let next = (next_coord, *direction, 1);
-                                if let Some(weight) = self.0.get_coordinate(next_coord) {
-                                    possible.push((next, *weight));
-                                }
+                                Some((next_coord, *direction, 1))
+                            } else {
+                                None
+                            }
+                        };
+
+                        if let Some(next) = next {
+                            if let Some(weight) = self.0.get_coordinate(next_coord) {
+                                possible.push((next, *weight))
                             }
                         }
                     }
@@ -163,7 +162,9 @@ impl HeatLossMaze {
                     possible
                 },
                 |((r, c), _, dc)| {
-                    (*r == (self.0.rows() - 1) as i64) && (*c == (self.0.cols() - 1) as i64) && *dc >= 4
+                    (*r == (self.0.rows() - 1) as i64)
+                        && (*c == (self.0.cols() - 1) as i64)
+                        && *dc >= 4
                 },
             );
 
