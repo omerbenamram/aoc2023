@@ -72,14 +72,14 @@ impl HeatLossMaze {
                         }
 
                         if direction == d {
-                            if *dc < 3 {
+                            if *dc < 2 {
                                 let next = (next_coord, *direction, *dc + 1);
                                 if let Some(weight) = self.0.get_coordinate(next_coord) {
                                     possible.push((next, *weight));
                                 }
                             }
                         } else {
-                            let next = (next_coord, *direction, 1);
+                            let next = (next_coord, *direction, 0);
                             if let Some(weight) = self.0.get_coordinate(next_coord) {
                                 possible.push((next, *weight));
                             }
