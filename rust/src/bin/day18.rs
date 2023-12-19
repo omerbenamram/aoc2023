@@ -101,18 +101,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use env_logger::Builder;
-    use log::LevelFilter;
-    use std::io::Write;
-
-    fn init_logging() {
-        Builder::new()
-            .is_test(true)
-            .format(|buf, record| writeln!(buf, "[{}] - {}", record.level(), record.args()))
-            .filter(None, LevelFilter::Debug)
-            .try_init()
-            .ok();
-    }
+    use aoc2023::testing::*;
 
     #[test]
     fn test() {
