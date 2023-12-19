@@ -7,6 +7,9 @@ rust_library(
     edition = "2021",
     visibility = ["//visibility:public"],
     deps = [
+        "@crates//:env_logger",
+        "@crates//:grid",
+        "@crates//:log",
         "@crates//:once_cell",  # keep
         "@crates//:regex",  # keep
     ],
@@ -31,11 +34,10 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":aoc2023",
+        "@crates//:anyhow",
+        "@crates//:itertools",
         "@crates//:once_cell",  # keep
         "@crates//:regex",  # keep
-
-        "@crates//:anyhow",
-        "@crates//:itertools"
     ],
 )
 
@@ -46,11 +48,10 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":aoc2023",
-        "@crates//:once_cell",  # keep
-        "@crates//:regex",  # keep
-        
         "@crates//:anyhow",
         "@crates//:itertools",
+        "@crates//:once_cell",  # keep
+        "@crates//:regex",  # keep
     ],
 )
 
@@ -81,11 +82,10 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":aoc2023",
-        "@crates//:once_cell",  # keep
-        "@crates//:regex",  # keep
-        
         "@crates//:anyhow",
         "@crates//:itertools",
+        "@crates//:once_cell",  # keep
+        "@crates//:regex",  # keep
         "@crates//:roots",
     ],
 )
@@ -97,11 +97,10 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":aoc2023",
-        "@crates//:once_cell",  # keep
-        "@crates//:regex",  # keep
-
         "@crates//:anyhow",
         "@crates//:itertools",
+        "@crates//:once_cell",  # keep
+        "@crates//:regex",  # keep
     ],
 )
 
@@ -112,11 +111,10 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":aoc2023",
-        "@crates//:once_cell",  # keep
-        "@crates//:regex",  # keep
-        
         "@crates//:anyhow",
         "@crates//:maplit",
+        "@crates//:once_cell",  # keep
+        "@crates//:regex",  # keep
     ],
 )
 
@@ -190,5 +188,153 @@ rust_test(
     name = "day9_test",
     compile_data = [":Cargo.toml"],
     crate = ":day9",
+    deps = ["@crates//:textwrap"],
+)
+
+rust_binary(
+    name = "day10",
+    srcs = ["src/bin/day10.rs"],
+    compile_data = [":Cargo.toml"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@crates//:anyhow",
+        "@crates//:geo",
+        "@crates//:itertools",
+        "@crates//:petgraph",
+    ],
+)
+
+rust_binary(
+    name = "day13",
+    srcs = ["src/bin/day13.rs"],
+    compile_data = [":Cargo.toml"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@crates//:anyhow",
+        "@crates//:ndarray",
+    ],
+)
+
+rust_binary(
+    name = "day14",
+    srcs = ["src/bin/day14.rs"],
+    compile_data = [":Cargo.toml"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@crates//:anyhow",
+        "@crates//:grid",
+    ],
+)
+
+rust_binary(
+    name = "day15",
+    srcs = ["src/bin/day15.rs"],
+    compile_data = [":Cargo.toml"],
+    visibility = ["//visibility:public"],
+    deps = ["@crates//:anyhow"],
+)
+
+rust_binary(
+    name = "day16",
+    srcs = ["src/bin/day16.rs"],
+    compile_data = [":Cargo.toml"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":aoc2023",
+        "@crates//:anyhow",
+        "@crates//:grid",
+        "@crates//:rayon",
+    ],
+)
+
+rust_binary(
+    name = "day17",
+    srcs = ["src/bin/day17.rs"],
+    compile_data = [":Cargo.toml"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":aoc2023",
+        "@crates//:anyhow",
+        "@crates//:env_logger",
+        "@crates//:grid",
+        "@crates//:log",
+        "@crates//:pathfinding",
+    ],
+)
+
+rust_binary(
+    name = "day18",
+    srcs = ["src/bin/day18.rs"],
+    compile_data = [":Cargo.toml"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":aoc2023",
+        "@crates//:once_cell",  # keep
+        "@crates//:regex",  # keep
+        "@crates//:anyhow",
+    ],
+)
+
+rust_binary(
+    name = "day19",
+    srcs = ["src/bin/day19.rs"],
+    compile_data = [":Cargo.toml"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":aoc2023",
+        "@crates//:anyhow",
+    ],
+)
+
+rust_test(
+    name = "day10_test",
+    compile_data = [":Cargo.toml"],
+    crate = ":day10",
+    deps = ["@crates//:textwrap"],
+)
+
+rust_test(
+    name = "day13_test",
+    compile_data = [":Cargo.toml"],
+    crate = ":day13",
+    deps = ["@crates//:textwrap"],
+)
+
+rust_test(
+    name = "day14_test",
+    compile_data = [":Cargo.toml"],
+    crate = ":day14",
+    deps = ["@crates//:textwrap"],
+)
+
+rust_test(
+    name = "day15_test",
+    compile_data = [":Cargo.toml"],
+    crate = ":day15",
+)
+
+rust_test(
+    name = "day16_test",
+    compile_data = [":Cargo.toml"],
+    crate = ":day16",
+)
+
+rust_test(
+    name = "day17_test",
+    compile_data = [":Cargo.toml"],
+    crate = ":day17",
+)
+
+rust_test(
+    name = "day18_test",
+    compile_data = [":Cargo.toml"],
+    crate = ":day18",
+    deps = ["@crates//:textwrap"],
+)
+
+rust_test(
+    name = "day19_test",
+    compile_data = [":Cargo.toml"],
+    crate = ":day19",
     deps = ["@crates//:textwrap"],
 )

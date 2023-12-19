@@ -1,9 +1,7 @@
 use std::str::FromStr;
 
 use aoc2023::{CoordExt, Direction, GridExt};
-
-use anyhow::{bail, Context, Result};
-use env_logger::Builder;
+use anyhow::{Context, Result};
 use grid::Grid;
 use log::debug;
 use pathfinding::prelude::dijkstra;

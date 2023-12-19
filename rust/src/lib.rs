@@ -9,6 +9,21 @@ macro_rules! regex {
     }};
 }
 
+pub mod testing {
+    use env_logger::Builder;
+    use log::LevelFilter;
+    use std::io::Write;
+
+    pub fn init_logging() {
+        Builder::new()
+            .is_test(true)
+            .format(|buf, record| writeln!(buf, "[{}] - {}", record.level(), record.args()))
+            .filter(None, LevelFilter::Debug)
+            .try_init()
+            .ok();
+    }
+}
+
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Direction {
     Left,
@@ -27,7 +42,6 @@ impl Direction {
         }
     }
 }
-
 
 pub trait CoordExt {
     fn left(&self) -> (i64, i64);

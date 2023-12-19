@@ -1,7 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# Load gazelle_rust. In a real project, this would use http_archive. Must come before rules_rust so
-# that the patch can be applied.
 GAZELLE_RUST_COMMIT = "00e88bceaa1a1c35d9c3019f65f3e20459fafe33"
 GAZELLE_RUST_SHA256 = "312f581a19cc4828c93df5a30c20e3f34a67a3e21853c70f64e7a9e74e670230"
 
