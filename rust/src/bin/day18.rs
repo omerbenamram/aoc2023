@@ -1,7 +1,6 @@
+use anyhow::{bail, Context, Ok, Result};
+use aoc2023::{regex, Direction};
 use std::str::FromStr;
-use aoc2023::{Direction, regex};
-use anyhow::{bail, Context, Result, Ok};
-
 
 type Input = Instructions;
 
@@ -14,33 +13,36 @@ impl FromStr for Instructions {
     fn from_str(s: &str) -> std::prelude::v1::Result<Self, Self::Err> {
         let re = regex!(r"([RDLU]) (\d+) \(#([\d\w]+)\)");
 
-        let inner = re.captures_iter(s).map(|cap| {
-            let direction = match cap[1].chars().next().unwrap() {
-                'R' => Direction::Right,
-                'L' => Direction::Left,
-                'U' => Direction::Up,
-                'D' => Direction::Down,
-                _ => unreachable!("regex cannot match this")
-            };
-            let count = cap[2].parse::<i64>().context(format!("expected digit: `{}`", &cap[2]))?;
-            let hex = cap[3].to_string();
-            let hex_count = i64::from_str_radix(&hex[0..5], 16).unwrap();
-            let hex_direction = match hex.chars().nth(5).unwrap() {
-                '0' => Direction::Right,
-                '1' => Direction::Down,
-                '2' => Direction::Left,
-                '3' => Direction::Up,
-                _ => bail!("Unexpected digit")
-            };
+        let inner = re
+            .captures_iter(s)
+            .map(|cap| {
+                let direction = match cap[1].chars().next().unwrap() {
+                    'R' => Direction::Right,
+                    'L' => Direction::Left,
+                    'U' => Direction::Up,
+                    'D' => Direction::Down,
+                    _ => unreachable!("regex cannot match this"),
+                };
+                let count = cap[2]
+                    .parse::<i64>()
+                    .context(format!("expected digit: `{}`", &cap[2]))?;
+                let hex = cap[3].to_string();
+                let hex_count = i64::from_str_radix(&hex[0..5], 16).unwrap();
+                let hex_direction = match hex.chars().nth(5).unwrap() {
+                    '0' => Direction::Right,
+                    '1' => Direction::Down,
+                    '2' => Direction::Left,
+                    '3' => Direction::Up,
+                    _ => bail!("Unexpected digit"),
+                };
 
-            Ok(((direction, count), (hex_direction, hex_count)))
-        }).collect::<Result<Vec<_>>>()?;
+                Ok(((direction, count), (hex_direction, hex_count)))
+            })
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(Instructions(inner))
     }
 }
-
-
 
 fn parse_input(s: &str) -> Result<Input> {
     Instructions::from_str(s)
@@ -53,7 +55,7 @@ fn solve(instructions: &[(Direction, i64)]) -> Result<i64> {
     for instruction in instructions {
         let count = instruction.1 as f64;
         let new_pos = match instruction.0 {
-            Direction::Left => (pos.0, pos.1 - count)            ,
+            Direction::Left => (pos.0, pos.1 - count),
             Direction::Right => (pos.0, pos.1 + count),
             Direction::Up => (pos.0 - count, pos.1),
             Direction::Down => (pos.0 + count, pos.1),
@@ -61,12 +63,12 @@ fn solve(instructions: &[(Direction, i64)]) -> Result<i64> {
         line_string.push(new_pos);
         pos = new_pos;
     }
-    
+
     let boundry_len: i64 = instructions.iter().map(|i| i.1).sum();
     let area = shoelace_area(&line_string) as i64;
-    
+
     let num_points = area - (boundry_len / 2) + 1;
-    
+
     Ok(num_points + boundry_len as i64)
 }
 
@@ -106,7 +108,8 @@ mod tests {
     #[test]
     fn test() {
         init_logging();
-        let input_str = textwrap::dedent("R 6 (#70c710)
+        let input_str = textwrap::dedent(
+            "R 6 (#70c710)
         D 5 (#0dc571)
         L 2 (#5713f0)
         D 2 (#d2c081)
@@ -120,7 +123,8 @@ mod tests {
         U 3 (#a77fa3)
         L 2 (#015232)
         U 2 (#7a21e3)
-        ");
+        ",
+        );
 
         let input = parse_input(&input_str).unwrap();
         assert_eq!(part1(&input).unwrap(), 62);
